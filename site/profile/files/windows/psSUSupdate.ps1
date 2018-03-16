@@ -22,24 +22,13 @@ param($global:RestartRequired=0,
 # Script Variables        
 $script:ScriptName = $MyInvocation.MyCommand.ToString()
 $script:ScriptPath = $MyInvocation.MyCommand.Path
-try {
-    $script:UpdateSession = New-Object -ComObject 'Microsoft.Update.Session' # update session provides connection for $UpdateSearcher try-catch
-}
-catch {
-    "Update Session not created."
-}
-try {
-    $script:UpdateSearcher = $script:UpdateSession.CreateUpdateSearcher() # try-catch
-}
-catch {
-    "update Searcher not created"
-}
-try {
-    $script:SearchResult = New-Object -ComObject 'Microsoft.Update.UpdateColl' # try-catch
-}
-catch {
-    "Update collection not created, no initial script:SearchResult."
-}
+
+$script:UpdateSession = New-Object -ComObject 'Microsoft.Update.Session' # update session provides connection for $UpdateSearcher 
+
+$script:UpdateSearcher = $script:UpdateSession.CreateUpdateSearcher() 
+
+$script:SearchResult = New-Object -ComObject 'Microsoft.Update.UpdateColl' 
+
 $script:Cycles = 0
 
 
@@ -48,40 +37,26 @@ function Check-ContinueRestartOrEnd() {
     $RegistryEntry = "InstallWindowsUpdates" 
     switch ($global:RestartRequired) {
         0 {	
-            try{
-                $prop = (Get-ItemProperty $RegistryKey).$RegistryEntry
-            }
-            catch {
-                "unable to get RegistryEntry property from $RegistryKey"
-            }
+            $prop = (Get-ItemProperty $RegistryKey).$RegistryEntry
+
+
             if ($prop) {
                 Write-Host "Restart Registry Entry Exists - Removing It"
-                try {
-                    Remove-ItemProperty -Path $RegistryKey -Name $RegistryEntry -ErrorAction SilentlyContinue
-                }
-                catch {
-                    "Unable to remove $RegistryEntry property from $RegistryKey"
-                }
+
+                Remove-ItemProperty -Path $RegistryKey -Name $RegistryEntry -ErrorAction SilentlyContinue
+		Write-Host "No Restart Required"
             }
             
-            Write-Host "No Restart Required"
-            try {
+
+
                 Check-WindowsUpdates
-            }
-            catch {
-                "Windows Update Check not successful"
-            }
             
             if (($global:MoreUpdates -eq 1) -and ($script:Cycles -le $global:MaxCycles)) {
-                try {
-                    Install-WindowsUpdates
-                }
-                catch {
-                    "Windows update install function error during continue or restart check"
-                }
+                Install-WindowsUpdates
+
             } elseif ($script:Cycles -gt $global:MaxCycles) {
                 Write-Host "Exceeded Cycle Count - Stopping"
-			} else {
+	    } else {
                 Write-Host "Done Installing Windows Updates"
             }
         }
@@ -212,9 +187,7 @@ function Check-WindowsUpdates() {
         $global:MoreUpdates=0
     }
 }
-# if ($job) {
-#     $main = 1
-# }else
+
 if ($check) {
     Check-WindowsUpdates
 }elseif ($install) {
@@ -228,9 +201,4 @@ if ($check) {
 
 
 
-# Check-WindowsUpdates
-# if ($global:MoreUpdates -eq 1) {
-#     Install-WindowsUpdates
-# } else {
-#     Check-ContinueRestartOrEnd
-# }
+
